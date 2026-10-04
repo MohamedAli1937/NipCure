@@ -18,19 +18,16 @@ services:
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "60"
-      # Gemma 3 via HuggingFace Inference API (free tier)
       - key: GEMMA_PROVIDER
         value: "huggingface"
       - key: GEMMA_MODEL
         value: "google/gemma-3-4b-it"
       - key: HF_TOKEN
         sync: false
-      # Optional: ElevenLabs TTS
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: ELEVENLABS_VOICE_ID
         value: "21m00Tcm4TlvDq8ikWAM"
-      # Optional: SerpApi research
       - key: SERPAPI_API_KEY
         sync: false
       - key: PYTHON_VERSION
@@ -39,7 +36,6 @@ services:
   - type: web
     name: nipcure-frontend
     runtime: static
-    region: oregon
     plan: free
     buildCommand: echo "No build needed"
     staticPublishPath: ./frontend
