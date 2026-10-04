@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#14463F" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>Profile – Nipcure</title>
+  </head>
+  <body>
+    <div class="bar">
+      <div>
+        <a class="brand" data-logo href="dashboard.html"></a
+        ><a id="back" class="link hidden" href="dashboard.html" data-i="back"
+          >Back</a
+        >
+      </div>
+    </div>
+    <main class="wrap profile-wrap">
+      <form id="form">
+        <h1 id="title">About you</h1>
+        <p>This helps us give you safe advice.</p>
+        <div class="profile-fields">
+          <div>
+            <label for="age">Age</label
+            ><input
+              id="age"
+              type="number"
+              min="1"
+              max="120"
+              inputmode="numeric"
+              required
+            />
+          </div>
+          <div>
+            <label for="allergies">Allergies</label
+            ><textarea
+              id="allergies"
+              placeholder="Example: penicillin, peanuts"
+            ></textarea>
+          </div>
+          <div>
+            <label for="likes">Foods you like</label
+            ><textarea id="likes"></textarea>
+          </div>
+          <div>
+            <label for="dislikes">Foods you dislike</label
+            ><textarea id="dislikes"></textarea>
+          </div>
+          <div>
+            <label for="diet">Diet rules</label
+            ><textarea
+              id="diet"
+              placeholder="Example: diabetic, low salt, halal"
+            ></textarea>
+          </div>
+          <div>
+            <label for="notes">Other notes</label
+            ><textarea id="notes"></textarea>
+          </div>
+        </div>
+        <div id="msg" class="msg"></div>
+        <button id="save" class="btn" type="submit" data-i="save">Save</button>
+      </form>
+    </main>
+    <script src="js/api.js"></script>
+    <script src="js/profile.js"></script>
+  </body>
+</html>

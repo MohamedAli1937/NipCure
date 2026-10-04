@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#14463F" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>My reports – nipcure</title>
+  </head>
+  <body>
+    <div class="bar">
+      <div>
+        <a class="brand" data-logo href="dashboard.html"></a
+        ><span class="acts"
+          ><a class="link" href="profile.html" data-i="user">Profile</a
+          ><button class="link" onclick="api.logout()" data-i="out">
+            Log out
+          </button></span
+        >
+      </div>
+    </div>
+    <main class="wrap">
+      <div id="msg" class="msg"></div>
+
+      <section id="home">
+        <h1>Your report</h1>
+        <div class="upload">
+          <span class="badge" data-i="upload"></span>
+          <p style="margin: 0.4rem 0 0">Choose the PDF from your doctor.</p>
+          <input
+            id="file"
+            type="file"
+            accept="application/pdf"
+            class="hidden"
+          />
+          <button class="btn" id="pick" data-i="upload">Upload report</button>
+        </div>
+        <h2 style="margin-top: 2.2rem">Previous reports</h2>
+        <div id="list"><p>No reports yet.</p></div>
+      </section>
+
+      <div id="spin" class="spin">
+        <i></i>Reading your report…<br /><span
+          style="font-weight: 400; color: var(--muted)"
+          >This can take a minute.</span
+        >
+      </div>
+
+      <section id="plan" class="hidden">
+        <button class="link" id="back" data-i="back">My reports</button>
+        <h1 id="plan-title">Your care plan</h1>
+        <div class="summary">
+          <span class="badge" style="background: #fff" data-i="check"></span>
+          <span class="summary-content" id="summary"></span>
+          <button class="sec-listen-btn" id="listen-summary" title="Listen to summary">🔊</button>
+        </div>
+        <div id="sections"></div>
+
+        <section id="research-section" class="learn-more-section">
+          <div class="learn-more-header">
+          <span
+            class="badge"
+            style="background: var(--mint); color: var(--pine); font-size: 1.3rem;"
+            aria-hidden="true"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg>
+          </span>
+
+          <div>
+            <h2>Learn more</h2>
+            <p class="learn-sub">
+              Educational guides from recognized health institutions based on your report
+            </p>
+          </div>
+          </div>
+          <div id="research-list" class="research-cards">
+            <p class="loading-hint">Loading educational resources…</p>
+          </div>
+          <p class="research-disclaimer">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M10.3 3.7L2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+
+            <span>
+              <b>Educational resources only.</b>
+              These verified links from organizations such as Mayo Clinic,
+              MedlinePlus, and the CDC are for patient education and do not replace
+              professional medical advice.
+            </span>
+          </p>
+        </section>
+
+        <div class="bottom-actions">
+<button class="btn alt" id="listen">
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+  </svg>
+
+  Listen to full plan
+</button>
+          <button class="btn alt" id="reexamine" data-i="refresh">Re-examine report</button>
+          <button class="btn danger" id="delete" data-i="trash">Delete report</button>
+        </div>
+      </section>
+    </main>
+    <script src="js/api.js"></script>
+    <script>
+      api.requireAuth();
+      const $ = (id) => document.getElementById(id);
+      let currentReportId = null;
+      let currentReportFilename = "";
+      let currentPlan = null;
+      let currentAudio = null;
+
+      function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      const PLAY_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';
+      const STOP_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12"></rect></svg>';
+
+      function stopAudio() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+          currentAudio = null;
+        }
+        if (window.speechSynthesis && window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+        }
+        const listenBtn = $("listen");
+        if (listenBtn) listenBtn.innerHTML = PLAY_SVG + " Listen to full plan";
+        document.querySelectorAll(".sec-listen-btn").forEach((b) => {
+          b.classList.remove("playing");
+          b.innerHTML = PLAY_SVG;
+          b.disabled = false;
+        });
+      }
+
+      const SECTIONS = [
+        [["conflicts"], "alert", "Conflicts & Verification"],
+        [["warnings"], "alert", "Important warnings"],
+        [["medicines"], "pill", "Medicines to buy"],
+        [["what_to_do", "todo"], "check", "What to do"],
+        [["what_to_avoid", "avoid"], "ban", "What to avoid"],
+        [["food_guidance", "food"], "food", "Food guidance"],
+        [["follow_up", "followup"], "calendar", "Follow-up"],
+        [["doctor_questions", "questions"], "help", "Ask your doctor"],
+        [["sources", "resources"], "globe", "Evidence & Sources"],
+      ];
+
+      const show = (id) =>
+        ["home", "plan"].forEach((s) =>
+          $(s).classList.toggle("hidden", s !== id),
+        );
+
+      async function playSection(btn, sectionKey, items, label) {
+        if (currentAudio && !currentAudio.paused) { stopAudio(); return; }
+        if (window.speechSynthesis && window.speechSynthesis.speaking) { stopAudio(); return; }
+        if (btn.classList.contains("playing")) { stopAudio(); return; }
+
+        stopAudio();
+        btn.disabled = true;
+        btn.innerHTML = "⏳";
+
+        const text = label + ": " + items.map((it) =>
+          typeof it === "object" && it !== null ? (it.title || it.url || JSON.stringify(it)) : String(it)
+        ).join(". ");
+
+        try {
+          const audioBlob = await api.voiceReport(currentReportId, text);
+          const audioUrl = URL.createObjectURL(audioBlob);
+          currentAudio = new Audio(audioUrl);
+          currentAudio.onended = () => stopAudio();
+          currentAudio.onerror = () => { stopAudio(); showMsg("error", "Error playing section audio."); };
+          await currentAudio.play();
+          btn.disabled = false;
+          btn.classList.add("playing");
+          btn.innerHTML = STOP_SVG;
+        } catch (err) {
+          if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = () => stopAudio();
+            utterance.onerror = () => stopAudio();
+            window.speechSynthesis.speak(utterance);
+            btn.disabled = false;
+            btn.classList.add("playing");
+            btn.innerHTML = STOP_SVG;
+          } else {
+            stopAudio();
+            showMsg("error", err.message || "Voice not available.");
+          }
+        }
+      }
+
+      async function toggleVoice() {
+        if (currentAudio && !currentAudio.paused) {
+          stopAudio();
+          return;
+        }
+        if (window.speechSynthesis && window.speechSynthesis.speaking) {
+          stopAudio();
+          return;
+        }
+
+        const listenBtn = $("listen");
+        listenBtn.disabled = true;
+        listenBtn.innerHTML = `
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 12a9 9 0 1 1-6.7-8.7"></path>
+            <path d="M21 3v6h-6"></path>
+          </svg>
+          Generating audio…
+        `;
+        try {
+          const audioBlob = await api.voiceReport(currentReportId);
+          const audioUrl = URL.createObjectURL(audioBlob);
+          currentAudio = new Audio(audioUrl);
+          currentAudio.onended = () => {
+            stopAudio();
+          };
+          currentAudio.onerror = () => {
+            stopAudio();
+            showMsg("error", "Error playing voice audio.");
+          };
+          await currentAudio.play();
+          listenBtn.innerHTML = STOP_SVG + " Stop listening";
+        } catch (err) {
+          console.warn("ElevenLabs TTS unavailable, falling back to speech synthesis:", err.message);
+          const textToSpeak = currentPlan?.voice_text || currentPlan?.summary || "No care plan summary available.";
+          if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.onend = () => {
+              stopAudio();
+            };
+            utterance.onerror = () => {
+              stopAudio();
+            };
+            window.speechSynthesis.speak(utterance);
+            listenBtn.innerHTML = STOP_SVG + " Stop listening";
+          } else {
+            showMsg("error", err.message || "Voice playback unavailable.");
+            listenBtn.innerHTML = PLAY_SVG + " Listen to full plan";
+          }
+        } finally {
+          listenBtn.disabled = false;
+        }
+      }
+
+      async function loadResearch(reportId) {
+        const container = $("research-list");
+        if (!container || !reportId) return;
+        container.innerHTML = '<p class="loading-hint">Searching verified medical organizations (Mayo Clinic, MedlinePlus, CDC)…</p>';
+        try {
+          const data = await api.researchReport(reportId);
+          if (!data.resources || data.resources.length === 0) {
+            container.innerHTML = '<p style="color:var(--muted); font-size:0.95rem;">No external educational guides found for the specific topics in this report.</p>';
+            return;
+          }
+          container.replaceChildren(
+            ...data.resources.map((item) => {
+              const a = document.createElement("a");
+              a.className = "research-card";
+              a.href = item.link;
+              a.target = "_blank";
+              a.rel = "noopener noreferrer";
+              a.innerHTML = `
+                <div class="research-source">${escapeHtml(item.source || "Medical Resource")}</div>
+                <div class="research-title">${escapeHtml(item.title)}</div>
+                ${item.snippet ? `<p class="research-snippet">${escapeHtml(item.snippet)}</p>` : ""}
+              `;
+              return a;
+            })
+          );
+        } catch (err) {
+          console.warn("Could not load research:", err);
+          container.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">Educational research guides are currently unavailable.</p>';
+        }
+      }
+
+      async function doReexamine(id) {
+        if (!id) return;
+        stopAudio();
+        $("msg").className = "msg";
+        show("");
+        $("spin").classList.add("show");
+        try {
+          const res = await api.reexamineReport(id);
+          renderPlan(res.plan, res.id, res.filename);
+          showMsg("success", "Care plan updated and re-examined with your profile!");
+        } catch (e) {
+          show(currentReportId ? "plan" : "home");
+          showMsg("error", e.message);
+        } finally {
+          $("spin").classList.remove("show");
+        }
+      }
+
+      async function doDelete(id, filename) {
+        if (!id) return;
+        stopAudio();
+        const name = filename ? `"${filename}"` : "this report";
+        if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) {
+          return;
+        }
+        try {
+          await api.deleteReport(id);
+          if (currentReportId === id) {
+            currentReportId = null;
+            currentReportFilename = "";
+            currentPlan = null;
+            show("home");
+          }
+          showMsg("success", "Report deleted successfully.");
+          await loadList();
+        } catch (e) {
+          showMsg("error", e.message);
+        }
+      }
+
+      async function loadList() {
+        try {
+          const items = await api.reports();
+          if (!items.length) {
+            $("list").innerHTML = "<p>No reports yet.</p>";
+            return;
+          }
+          $("list").replaceChildren(
+            ...items.map((r) => {
+              const card = document.createElement("div");
+              card.className = "report";
+
+              const mainBtn = document.createElement("button");
+              mainBtn.className = "report-main";
+              mainBtn.type = "button";
+              mainBtn.innerHTML =
+                '<span class="badge">' +
+                icon("file") +
+                '</span><span><b></b><small></small></span><span class="go" style="margin-left:auto">' +
+                icon("arrow") +
+                "</span>";
+              mainBtn.querySelector("b").textContent = r.filename;
+              mainBtn.querySelector("small").textContent = new Date(
+                r.created_at,
+              ).toLocaleDateString();
+              mainBtn.onclick = async () => {
+                try {
+                  const rep = await api.report(r.id);
+                  renderPlan(rep.plan, rep.id, rep.filename);
+                } catch (e) {
+                  showMsg("error", e.message);
+                }
+              };
+
+              const acts = document.createElement("div");
+              acts.className = "report-acts";
+
+              const reBtn = document.createElement("button");
+              reBtn.className = "icon-btn";
+              reBtn.type = "button";
+              reBtn.title = "Re-examine report with current profile";
+              reBtn.innerHTML = icon("refresh");
+              reBtn.onclick = (e) => {
+                e.stopPropagation();
+                doReexamine(r.id);
+              };
+
+              const delBtn = document.createElement("button");
+              delBtn.className = "icon-btn danger";
+              delBtn.type = "button";
+              delBtn.title = "Delete report";
+              delBtn.innerHTML = icon("trash");
+              delBtn.onclick = (e) => {
+                e.stopPropagation();
+                doDelete(r.id, r.filename);
+              };
+
+              acts.append(reBtn, delBtn);
+              card.append(mainBtn, acts);
+              return card;
+            }),
+          );
+        } catch (e) {
+          showMsg("error", e.message);
+        }
+      }
+
+      function renderPlan(plan, id, filename) {
+        stopAudio();
+        if (id) currentReportId = id;
+        if (filename) currentReportFilename = filename;
+        currentPlan = plan;
+
+        if (filename) {
+          $("plan-title").textContent = filename;
+        } else {
+          $("plan-title").textContent = "Your care plan";
+        }
+        $("summary").textContent = plan.summary || "";
+        $("listen-summary").innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>`;
+
+        $("listen-summary").onclick = async function () {
+          const summaryText = plan.summary || "No summary available.";
+          await playSection(this, "summary", [summaryText], "Summary");
+        };
+
+        const getItems = (keys) => {
+          for (const k of keys) {
+            if (Array.isArray(plan[k]) && plan[k].length > 0) return plan[k];
+          }
+          return [];
+        };
+        $("sections").replaceChildren(
+          ...SECTIONS.filter(([keys]) => getItems(keys).length).map(
+            ([keys, ic, label]) => {
+              const items = getItems(keys);
+              const sectionKey = keys[0];
+              const isWarn = keys.includes("warnings") || keys.includes("conflicts");
+              
+              const wrap = document.createElement("div");
+              wrap.style.display = "flex";
+              wrap.style.alignItems = "flex-start";
+              wrap.style.gap = "0.5rem";
+              wrap.style.marginBottom = "0.2rem";
+
+              const d = document.createElement("details");
+              d.className = "sec" + (isWarn ? " warn" : "");
+              d.style.flex = "1";
+              if (isWarn) d.open = true;
+              
+              const s = document.createElement("summary");
+
+              const secListenBtn = document.createElement("button");
+              secListenBtn.type = "button";
+              secListenBtn.className = "sec-listen-btn";
+              secListenBtn.title = "Listen to " + label;
+              secListenBtn.innerHTML = PLAY_SVG;
+              secListenBtn.style.marginTop = "0.8rem";
+              secListenBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                playSection(secListenBtn, sectionKey, items, label);
+              };
+
+              s.innerHTML =
+                '<span class="badge">' +
+                icon(ic) +
+                "</span><span>" +
+                label +
+                "</span>";
+              s.insertAdjacentHTML("beforeend", icon("chev", "chev"));
+              
+              d.append(s);
+
+              const PROFILE_BADGE_HTML = `
+                <span class="profile-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  From your profile
+                </span>`;
+
+              const renderItem = (item) => {
+                const li = document.createElement("li");
+                let text = "";
+                let isLink = false;
+                let url = "";
+
+                if (typeof item === "object" && item !== null) {
+                  text = item.title || item.url || "";
+                  if (item.url) {
+                    isLink = true;
+                    url = item.url;
+                  }
+                } else {
+                  text = String(item);
+                }
+
+                let isProfile = false;
+                // Sometimes gemma outputs a colon after the tag, like [Patient profile]:
+                if (text.startsWith("[Patient profile]")) {
+                  isProfile = true;
+                  text = text.replace("[Patient profile]", "").replace(/^:/, "").trim();
+                }
+
+                if (isLink) {
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.target = "_blank";
+                  a.rel = "noopener";
+                  a.textContent = text;
+                  if (isProfile) {
+                    li.innerHTML = PROFILE_BADGE_HTML + " ";
+                    li.append(a);
+                  } else {
+                    li.append(a);
+                  }
+                } else {
+                  if (isProfile) {
+                    li.innerHTML = PROFILE_BADGE_HTML + " <span>" + escapeHtml(text) + "</span>";
+                  } else {
+                    li.textContent = text;
+                  }
+                }
+                return li;
+              };
+
+              if (sectionKey === "food_guidance") {
+                const medicalItems = [];
+                const profileItems = [];
+                items.forEach(item => {
+                  const text = typeof item === "string" ? item : (item.title || "");
+                  if (text.startsWith("[Patient profile]")) profileItems.push(item);
+                  else medicalItems.push(item);
+                });
+
+                if (medicalItems.length > 0) {
+                  const ul = document.createElement("ul");
+                  medicalItems.forEach(item => ul.append(renderItem(item)));
+                  d.append(ul);
+                }
+                if (profileItems.length > 0) {
+                  const subtitle = document.createElement("div");
+                  subtitle.className = "profile-group-title";
+                  subtitle.textContent = "Profile preferences & restrictions";
+                  const ulProfile = document.createElement("ul");
+                  profileItems.forEach(item => ulProfile.append(renderItem(item)));
+                  d.append(subtitle, ulProfile);
+                }
+              } else {
+                const ul = document.createElement("ul");
+                items.forEach((item) => {
+                  ul.append(renderItem(item));
+                });
+                d.append(ul);
+              }
+
+              wrap.append(d, secListenBtn);
+              return wrap;
+            },
+          ),
+        );
+        $("listen").onclick = toggleVoice;
+        $("reexamine").onclick = () => doReexamine(currentReportId);
+        $("delete").onclick = () => doDelete(currentReportId, currentReportFilename);
+        if (id) {
+          loadResearch(id);
+        }
+        show("plan");
+        window.scrollTo(0, 0);
+      }
+
+      $("pick").onclick = () => $("file").click();
+      $("back").onclick = () => {
+        stopAudio();
+        show("home");
+        loadList();
+      };
+      $("file").onchange = async () => {
+        const f = $("file").files[0];
+        if (!f) return;
+        if (f.type !== "application/pdf")
+          return showMsg("error", "Please choose a PDF file.");
+        $("msg").className = "msg";
+        show("");
+        $("spin").classList.add("show");
+        try {
+          const res = await api.upload(f);
+          renderPlan(res.plan, res.id, res.filename);
+        } catch (e) {
+          show("home");
+          showMsg("error", e.message);
+        }
+        $("spin").classList.remove("show");
+        $("file").value = "";
+      };
+      loadList();
+    </script>
+  </body>
+</html>

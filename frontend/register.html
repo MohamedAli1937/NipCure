@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#14463F" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>Create account – NipCure</title>
+  </head>
+  <body>
+    <div class="split">
+      <header class="side">
+        <a class="brand" data-logo href="index.html"></a>
+        <h2>A few details keep your advice safe.</h2>
+      </header>
+      <main class="main">
+        <div class="box">
+          <form id="step1">
+            <h1>Create account</h1>
+            <label for="name">Name</label
+            ><input id="name" autocomplete="username" required />
+            <p class="hint">You will use this name to log in.</p>
+            <label for="password">Password</label
+            ><input
+              id="password"
+              type="password"
+              autocomplete="new-password"
+              required
+            /><label class="check"
+              ><input type="checkbox" id="show" /> Show password</label
+            >
+            <p class="hint">At least 6 characters.</p>
+            <button
+              id="next"
+              class="btn"
+              type="submit"
+              data-i="arrow"
+              data-pos="end"
+            >
+              Next
+            </button>
+            <p class="center" style="margin: 1rem 0 0">
+              <a class="link" href="login.html">Have an account? Log in</a>
+            </p>
+          </form>
+          <div id="msg" class="msg"></div>
+        </div>
+      </main>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/register.js"></script>
+  </body>
+</html>

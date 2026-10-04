@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#14463F" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>Log in – NipCure</title>
+  </head>
+  <body>
+    <div class="split">
+      <header class="side">
+        <a class="brand" data-logo href="index.html"></a>
+        <h2>Good to see you again.</h2>
+      </header>
+      <main class="main">
+        <form class="box" id="form">
+          <h1>Log in</h1>
+          <label for="name">Name</label
+          ><input id="name" autocomplete="username" required />
+          <label for="password">Password</label
+          ><input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          /><label class="check"
+            ><input type="checkbox" id="show" /> Show password</label
+          >
+          <div id="msg" class="msg"></div>
+          <button
+            id="go"
+            class="btn"
+            type="submit"
+            data-i="arrow"
+            data-pos="end"
+          >
+            Log in
+          </button>
+          <p class="center" style="margin: 1rem 0 0">
+            <a class="link" href="register.html">New here? Create account</a>
+          </p>
+        </form>
+      </main>
+    </div>
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
+  </body>
+</html>

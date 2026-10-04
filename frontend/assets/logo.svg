@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-labelledby="title">
+  <title id="title">NipCure</title>
+  <rect width="40" height="40" rx="12" fill="#14463f"/>
+  <path d="M11 29C11 17 18 10 30 10c0 12-7 19-19 19Z" fill="#fff"/>
+  <path d="M13.5 27 24 16.5" fill="none" stroke="#14463f" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
