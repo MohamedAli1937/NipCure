@@ -36,7 +36,6 @@ services:
   - type: web
     name: nipcure-frontend
     runtime: static
-    plan: free
     buildCommand: echo "No build needed"
     staticPublishPath: ./frontend
     routes:
