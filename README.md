@@ -14,9 +14,9 @@
 
 NipCure is a healthcare assistant designed with **older adults** in mind. It transforms complex medical PDF reports into clear, structured **Care Plans** containing medications, instructions, warnings, follow-ups, and questions for the doctor.
 
-Patients can also add their **age, allergies, dietary restrictions, and preferences**. NipCure compares this profile with the report to detect potential conflicts and mark them as **“Needs verification.”**
+Patients can also add their **age, allergies, dietary restrictions, and preferences**. NipCure compares this profile with the report to detect potential conflicts and mark them as **"Needs verification."**
 
-The goal is simple: make medical information **easier to understand, organize, and remember** (not replace healthcare professionals).
+The goal is simple: make medical information **easier to understand, organize, and remember** — not replace healthcare professionals.
 
 ---
 
@@ -37,7 +37,7 @@ flowchart LR
 
 The medical report is always processed **before** the patient's profile.
 
-This means the patient's preferences do not change or override the information extracted from the medical document.
+This means the patient's preferences do not change or override information extracted from the medical document.
 
 ---
 
@@ -48,7 +48,7 @@ The generated Care Plan organizes the information into simple sections:
 ```text
 Care Plan
 ├── Important Warnings
-├── Medications
+├── Medications Mentioned in the Report
 ├── What To Do
 ├── Food Guidance
 ├── Follow-Up
@@ -111,7 +111,7 @@ The objective is to make the application usable even for someone who is not comf
 
 ## Voice Assistance
 
-NipCure integrates **ElevenLabs** to convert the final Care Plan into a natural voice narration.
+NipCure can integrate **ElevenLabs** to convert the final Care Plan into natural voice narration.
 
 ```mermaid
 flowchart LR
@@ -139,7 +139,7 @@ flowchart LR
     C --> D[Learn More]
 ```
 
-The research component is intentionally separated from the Care Plan generation.
+The research component is intentionally separated from Care Plan generation.
 
 Search results are **educational only** and are not used to generate, modify, or override medical instructions.
 
@@ -156,7 +156,9 @@ The system prioritizes resources from recognized medical institutions and organi
 
 ## Technical Architecture
 
-At a high level, NipCure consists of a frontend, FastAPI backend, database, AI layer, and external services.
+NipCure is designed as a **local-first AI application**.
+
+The core AI pipeline runs locally using **Gemma 3 through Ollama**. This means medical documents can be processed without sending their contents to a third-party LLM API.
 
 ```mermaid
 flowchart LR
@@ -165,15 +167,27 @@ flowchart LR
 
     API --> DB[(PostgreSQL)]
     API --> PDF[PyPDF]
-    PDF --> AI[Gemma 3]
+    PDF --> AI[Ollama]
+    AI --> GEMMA[Gemma 3]
 
-    AI --> PLAN[Care Plan]
+    GEMMA --> PLAN[Care Plan]
     PLAN --> TTS[ElevenLabs]
     PLAN --> SEARCH[SerpApi]
-    API --> PROFILE[Patient Profile]
 
+    API --> PROFILE[Patient Profile]
     PROFILE --> AI
 ```
+
+### Why Local AI?
+
+Running Gemma 3 locally provides several advantages:
+
+- Medical documents can remain on the user's machine
+- No proprietary LLM API is required for the core AI pipeline
+- No per-request LLM cost
+- The model can be replaced or modified more easily
+- The application can continue working without an internet connection for the core AI processing
+- Open-weight AI becomes the core of the application rather than an optional feature
 
 ---
 
@@ -216,10 +230,8 @@ NipCure/
 │   ├── dashboard.html
 │   ├── index.html
 │   ├── login.html
-│   ├── profile.html
-│   └── register.html
+│   └── profile.html
 │
-├── render.yaml
 ├── .gitignore
 └── README.md
 ```
@@ -230,8 +242,8 @@ NipCure/
 
 | Area | Technology | Purpose |
 |---|---|---|
-| AI | **Gemma 3** | Understand medical reports and generate Care Plans |
-| Local AI Runtime | **Ollama** | Run Gemma 3 locally during development |
+| AI Model | **Gemma 3** | Understand medical reports and generate Care Plans |
+| Local AI Runtime | **Ollama** | Run Gemma 3 locally |
 | Backend | **Python / FastAPI** | API and application logic |
 | ORM | **SQLAlchemy** | Database interaction |
 | Frontend | **HTML / CSS / JavaScript** | Patient interface |
@@ -240,7 +252,6 @@ NipCure/
 | Voice | **ElevenLabs** | Care Plan voice narration |
 | Research | **SerpApi** | Educational medical resource discovery |
 | Authentication | **JWT / bcrypt** | Authentication and password security |
-| Deployment | **Render** | Frontend, backend, and database hosting |
 
 ---
 
@@ -250,19 +261,43 @@ NipCure/
 
 **Gemma 3** is at the core of NipCure.
 
-It processes the extracted medical report and produces a structured Care Plan based on the information contained in the document.
+It processes the extracted medical report and produces a structured Care Plan based on information contained in the document.
+
+The model runs locally rather than through a proprietary cloud LLM API.
 
 ### Ollama
 
-During development, Gemma 3 runs locally through **Ollama**, allowing the AI pipeline to be developed and tested without depending on a proprietary AI API.
+**Ollama** provides the local runtime used to run Gemma 3.
+
+The local pipeline is:
+
+```text
+Medical PDF
+    ↓
+PyPDF
+    ↓
+Extracted Text
+    ↓
+FastAPI
+    ↓
+Ollama
+    ↓
+Gemma 3
+    ↓
+Structured Care Plan
+```
 
 ### ElevenLabs
 
 Used for natural voice narration of the final Care Plan.
 
+ElevenLabs is an optional external service and is not part of the core medical reasoning pipeline.
+
 ### SerpApi
 
-Used to discover additional educational resources related to the medical topics found in the report.
+Used to discover additional educational resources related to medical topics found in the report.
+
+SerpApi results are kept separate from the AI-generated Care Plan.
 
 ### PostgreSQL
 
@@ -273,20 +308,140 @@ Stores:
 - Uploaded report information
 - Generated Care Plans
 
-### Render
+---
 
-Used to deploy the application:
+## Local Setup
 
-```mermaid
-flowchart LR
-    GH[GitHub] --> R[Render]
-    R --> FE[Frontend]
-    R --> API[FastAPI]
-    R --> DB[(PostgreSQL)]
+### 1. Clone the repository
 
-    API --> AI[Gemma 3 Provider]
-    API --> EL[ElevenLabs]
-    API --> SA[SerpApi]
+```bash
+git clone https://github.com/MohamedAli1937/NipCure.git
+cd NipCure
+```
+
+### 2. Install Ollama
+
+Install Ollama and download Gemma 3:
+
+```bash
+ollama pull gemma3:4b
+```
+
+Verify that the model is available:
+
+```bash
+ollama list
+```
+
+You can also test it directly:
+
+```bash
+ollama run gemma3:4b
+```
+
+### 3. Start PostgreSQL
+
+NipCure uses PostgreSQL for users, profiles, and reports.
+
+For local development, PostgreSQL can be run with Docker:
+
+```bash
+docker run --name nipcure-postgres \
+  -e POSTGRES_DB=nipcure \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 5433:5432 \
+  -d postgres:17
+```
+
+### 4. Configure environment variables
+
+Create:
+
+```text
+backend/.env
+```
+
+Example:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/nipcure
+
+JWT_SECRET_KEY=your-long-random-secret
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+
+SERPAPI_API_KEY=
+```
+
+The ElevenLabs and SerpApi keys are optional.
+
+Gemma does **not** require a Hugging Face token because the model runs locally through Ollama.
+
+### 5. Install Python dependencies
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### 6. Start the backend
+
+From the project root:
+
+```bash
+uvicorn app.main:app --reload --app-dir backend
+```
+
+The API will be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+FastAPI documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 7. Open the frontend
+
+Open:
+
+```text
+frontend/index.html
+```
+
+or serve the frontend with a local static server.
+
+---
+
+## API
+
+The backend exposes REST endpoints for the main application features:
+
+```text
+Authentication
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/auth/me
+
+Profile
+GET    /api/profile
+PUT    /api/profile
+
+Reports
+GET    /api/reports
+POST   /api/reports
+GET    /api/reports/{id}
+DELETE /api/reports/{id}
+POST   /api/reports/{id}/reexamine
+POST   /api/reports/{id}/voice
+GET    /api/reports/{id}/research
 ```
 
 ---
@@ -308,54 +463,48 @@ The system is designed to avoid:
 
 - Inventing medications or dosages
 - Inventing medical instructions
+- Inventing diagnoses or warnings
 - Silently overriding information from the report
 - Using web search results as medical instructions
 - Presenting the system as a replacement for a doctor
 
-When information is unclear or conflicting, the system can mark it as **"Needs verification"**.
+When information is unclear or conflicting, the system can mark it as **"Needs verification."**
+
+The medical report is the primary source. Patient profile information is secondary and is used for comparison and personalization.
 
 For development and testing, NipCure should use **synthetic or de-identified medical documents** rather than real patient data.
 
 ---
 
-## API
+## Privacy
 
-The backend exposes REST endpoints for the main application features:
+NipCure's local AI architecture is designed to keep the core medical-document processing on the user's machine.
 
 ```text
-Authentication
-POST   /api/auth/register
-POST   /api/auth/login
-
-Profile
-GET    /api/profile
-PUT    /api/profile
-
-Reports
-GET    /api/reports
-POST   /api/reports
-GET    /api/reports/{id}
-DELETE /api/reports/{id}
-POST   /api/reports/{id}/reexamine
-POST   /api/reports/{id}/voice
-GET    /api/reports/{id}/research
+Medical Report
+      ↓
+Local FastAPI
+      ↓
+Local Ollama
+      ↓
+Local Gemma 3
+      ↓
+Care Plan
 ```
+
+The core AI processing does not require sending the medical report to a proprietary cloud LLM.
+
+Optional external services such as ElevenLabs and SerpApi are separate from the core Gemma pipeline.
 
 ---
 
-## Deployment
+## Hacktoberfest
 
-NipCure includes a `render.yaml` configuration for deployment with **Render**.
+Built for the **Hacktoberfest Weekend Challenge: Build for a Friend**.
 
-The deployment can contain:
+NipCure uses **Gemma 3**, an open-weight model, as the core AI component and runs inference locally through **Ollama**.
 
-- Static frontend
-- FastAPI backend
-- PostgreSQL database
-- Environment-based API credentials
-- Health checks
-
-External services such as ElevenLabs and SerpApi are configured through backend environment variables.
+The local-first approach is particularly relevant for healthcare because it allows the application to process sensitive medical documents without requiring a proprietary cloud LLM API.
 
 ---
 
@@ -365,12 +514,8 @@ MIT License.
 
 ---
 
-## Hacktoberfest
-
-Built for the **Hacktoberfest Weekend Challenge: Build for a Friend**.
-
 ## Why "NipCure"?
 
 **NipCure** = **Nippur + Cure**.
 
-Nippur gave us one of the oldest known medical texts. We just gave it a **21st-century AI upgrade**. 🫠
+Nippur gave us one of the oldest known medical texts. We just gave it a **21st-century AI upgrade**.
